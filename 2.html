@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام بحث البيانات</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 20px;
+            background-color: #f7f7f7;
+            text-align: center;
+            direction: rtl;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        input {
+            padding: 12px;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 20px;
+            border: 1px solid #ddd;
+            border-radius: 25px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            font-size: 16px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0 auto;
+            max-width: 600px;
+        }
+        li {
+            background: #ffffff;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: right;
+        }
+        li strong {
+            color: #2980b9;
+        }
+        @media (max-width: 600px) {
+            input {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>البحث</h1>
+<input type="text" id="searchInput" placeholder="أدخل كلمة للبحث..." />
+<ul id="results"></ul>
+
+<script>
+    const apiKey = 'AIzaSyBhiqVypmyLHYPmqZYtvdSvxEopcLZBdYU';
+    const sheetId = '1bYEKmYljcojouyN6yR_AqkN_t-17LXQOh09ihUM1zJ4';
+    const range = 'Data!A1:L20000';
+    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+
+    // Fetch data from Google Sheets
+    async function fetchData() {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        return data.values;
+    }
+
+    // Find context information (الجهة، الإقليم، الدائرة) with a hierarchy structure
+    function findContext(index, data) {
+        let region = '';
+        let province = '';
+        let district = '';
+
+        // Loop backwards to find الجهة, الإقليم, الدائرة
+        for (let i = index; i >= 0; i--) {
+            const row = data[i].filter(cell => cell); // Ignore empty cells
+            if (row.length > 0) {
+                const cell = row[0];
+
+                if (cell.startsWith('جهة :') && !region) {
+                    region = cell;
+                } else if ((cell.startsWith('إقليم:') || cell.startsWith('عمالة:')) && !province) {
+                    province = cell;
+                } else if ((cell.startsWith('دائرة :') || cell.startsWith('مركز:')) && !district) {
+                    district = cell;
+                }
+            }
+
+            // Stop if we've found all levels
+            if (region && province && district) break;
+        }
+
+        return { region, province, district };
+    }
+
+    // Search function in all cells with precise hierarchy
+    function search(query, data) {
+        const lowerCaseQuery = query.toLowerCase();
+        const results = [];
+
+        data.forEach((row, index) => {
+            row.forEach(cell => {
+                if (cell && cell.toLowerCase().includes(lowerCaseQuery)) {
+                    const context = findContext(index, data);
+                    results.push({
+                        cell,
+                        region: context.region,
+                        province: context.province,
+                        district: context.district
+                    });
+                }
+            });
+        });
+
+        return results;
+    }
+
+    // Display results in more accurate format
+    function displayResults(results) {
+        const resultsContainer = document.getElementById('results');
+        resultsContainer.innerHTML = '';
+
+        if (results.length === 0) {
+            resultsContainer.innerHTML = '<li>لا توجد نتائج</li>';
+            return;
+        }
+
+        results.forEach(result => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <strong></strong> ${result.cell}<br>
+                <strong></strong> ${result.district || 'غير متوفر'}<br>
+                <strong></strong> ${result.province || 'غير متوفر'}<br>
+                <strong></strong> ${result.region || 'غير متوفر'}
+            `;
+            resultsContainer.appendChild(li);
+        });
+    }
+
+    // Initialize search with precise hierarchy detection
+    async function init() {
+        const data = await fetchData();
+
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', () => {
+            const query = searchInput.value;
+            const results = search(query, data);
+            displayResults(results);
+        });
+    }
+
+    // Start the application
+    init();
+</script>
+
+</body>
+</html>
