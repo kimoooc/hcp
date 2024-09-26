@@ -3,17 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>عرض البيانات</title>
+    <title>جماعات واقاليم</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             direction: rtl;
             padding: 20px;
+            background-color: #f4f4f4; /* خلفية فاتحة */
+            color: #444; /* نص داكن */
+            line-height: 1.6;
         }
-        select, input {
+        h1 {
+            text-align: center;
+            color: #2c3e50; /* لون داكن للعناوين */
+            margin-bottom: 20px;
+            font-size: 2em; /* حجم أكبر للعنوان */
+            font-weight: 600; /* وزن خط أكبر */
+        }
+        label {
+            display: block;
+            margin: 10px 0 5px;
+            font-weight: bold; /* نص التصنيفات بخط عريض */
+        }
+        select {
             margin: 10px 0;
-            padding: 10px;
-            width: 250px;
+            padding: 12px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid #bdc3c7; /* حدود خفيفة */
+            border-radius: 5px; /* زوايا مدورة */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* ظل خفيف */
+            font-size: 16px;
+            transition: border-color 0.3s; /* تأثير عند تغيير اللون */
+            text-align: right; /* محاذاة النصوص لليمين */
+        }
+        select:focus {
+            border-color: #3498db; /* تغيير لون الحدود عند التركيز */
+            outline: none; /* إزالة الخط الخارجي */
+        }
+        .search-container {
+            position: relative;
+            margin: 10px 0;
+            max-width: 400px; /* عرض أقصى لمربع البحث */
+        }
+        input[type="text"] {
+            width: 50%;
+            padding: 10px 40px 10px 40px; /* إضافة مسافة داخلية للإيقونة */
+            border: 1px solid #bdc3c7; /* حدود خفيفة */
+            border-radius: 5px; /* زوايا مدورة */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* ظل خفيف */
+            font-size: 16px;
+            transition: border-color 0.3s; /* تأثير عند تغيير اللون */
+            text-align: right; /* محاذاة النصوص لليمين */
+        }
+        input[type="text"]:focus {
+            border-color: #3498db; /* تغيير لون الحدود عند التركيز */
+            outline: none; /* إزالة الخط الخارجي */
+        }
+        .search-icon {
+            position: absolute;
+            top: 50%;
+            left: 10px; /* المسافة من اليسار */
+            transform: translateY(-50%); /* محاذاة عمودية */
+            color: #7f8c8d; /* لون الأيقونة */
+            pointer-events: none; /* لجعل الأيقونة غير قابلة للتفاعل */
         }
         #result {
             margin-top: 20px;
@@ -23,20 +76,34 @@
             padding: 0;
         }
         .points li {
-            font-weight: bold; /* لجعل النص بخط عريض */
+            font-weight: bold;
+            background-color: #ecf0f1; /* خلفية خفيفة للعناصر */
+            padding: 15px;
+            margin: 5px 0;
+            border-radius: 5px; /* زوايا مدورة للعناصر */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* ظل خفيف */
+            transition: background-color 0.3s; /* تأثير عند المرور */
         }
-        .subpoints {
-            list-style-type: circle; /* شكل النقاط للجماعات */
-            padding-left: 20px; /* لإضافة مسافة من اليسار */
+        .points li:hover {
+            background-color: #d5dbdb; /* خلفية عند المرور */
         }
-        .details {
-            list-style-type: square; /* شكل النقاط للتفاصيل */
-            padding-left: 40px; /* لإضافة مسافة من اليسار */
+        .subpoints, .details {
+            list-style-type: circle;
+            padding-left: 20px;
+            margin: 5px 0;
+        }
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5em; /* حجم عنوان أصغر للشاشات الصغيرة */
+            }
+            select, input[type="text"] {
+                font-size: 14px; /* حجم نص أصغر على الأجهزة المحمولة */
+            }
         }
     </style>
 </head>
 <body>
-    <h1>اختيار البيانات</h1>
+    <h1>جماعات واقاليم</h1>
     
     <label for="جهة">الجهة:</label>
     <select id="جهة" onchange="loadDistricts()">
@@ -48,8 +115,8 @@
         <option value="">اختر إقليم/عمالة</option>
     </select>
 
-    <div>
-        <label for="search">بحث:</label>
+    <div class="search-container">
+        <span class="search-icon">🔍</span> <!-- رمز البحث -->
         <input type="text" id="search" oninput="searchData()" placeholder="ابحث عن جماعة، دائرة، إقليم، عمالة...">
     </div>
 
@@ -190,6 +257,7 @@
                     const listItem = document.createElement('div');
                     listItem.textContent = `${item.value} (${item.type})`;
                     listItem.style.fontWeight = 'bold';
+                    listItem.style.marginBottom = '10px'; // مسافة بين العناصر
 
                     // تحديد ما إذا كان له تابع
                     if (item.type.includes('دائرة') || item.type.includes('مركز')) {
